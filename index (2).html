@@ -1,0 +1,234 @@
+<!DOCTYPE html>
+<html lang="da">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Pillechat</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:wght@400;600;800&display=swap" rel="stylesheet">
+<style>
+:root{
+  --bg:#eef3f1; --card:#ffffff; --ink:#14272b; --mute:#5d7074;
+  --teal:#0f6b6b; --coral:#e2574c; --line:#d3dfdc; --ok:#1f8a5b;
+  box-sizing:border-box;
+  padding-top:env(safe-area-inset-top,0px); padding-bottom:env(safe-area-inset-bottom,0px);
+  color-scheme:light;
+}
+@media (prefers-color-scheme:dark){
+  :root:not([data-theme="light"]){
+    --bg:#0e1a1c; --card:#172629; --ink:#e7f0ee; --mute:#8fa5a8; --line:#27393c;
+    --teal:#3fb5ac; --coral:#ff7b6f; --ok:#4cc58d; color-scheme:dark;
+  }
+}
+*{box-sizing:border-box}
+html,body{margin:0;min-height:100%}
+body{background:var(--bg);color:var(--ink);font-family:"Bricolage Grotesque",system-ui,-apple-system,"Segoe UI",sans-serif;line-height:1.45}
+main{max-width:480px;margin:0 auto;padding:20px 18px 40px}
+h1{font-size:1.9rem;font-weight:800;letter-spacing:-.02em;margin:6px 0 2px}
+.sub{color:var(--mute);margin:0 0 22px}
+.status{display:grid;gap:10px;margin-bottom:26px}
+.row{display:flex;align-items:center;gap:14px;background:var(--card);border:1px solid var(--line);border-radius:18px;padding:14px 16px}
+.cap{width:46px;height:20px;border-radius:20px;flex:none;border:2px solid var(--line);background:linear-gradient(90deg,var(--line) 50%,var(--line) 50%);transition:background .3s,border-color .3s}
+.row.done .cap{border-color:var(--ok);background:linear-gradient(90deg,var(--teal) 50%,var(--coral) 50%)}
+.row b{display:block;font-weight:600}
+.row span{color:var(--mute);font-size:.92rem}
+.mic-wrap{display:flex;flex-direction:column;align-items:center;gap:12px;margin:10px 0 22px}
+#mic{width:112px;height:112px;border-radius:56px;border:0;background:var(--teal);color:#fff;font:inherit;font-weight:600;font-size:1rem;cursor:pointer;box-shadow:0 0 0 8px color-mix(in srgb,var(--teal) 18%,transparent);transition:transform .15s,background .2s,box-shadow .2s}
+#mic:active{transform:scale(.96)}
+#mic.live{background:var(--coral);box-shadow:0 0 0 14px color-mix(in srgb,var(--coral) 22%,transparent)}
+#mic:focus-visible,button:focus-visible,select:focus-visible,input:focus-visible{outline:3px solid var(--coral);outline-offset:3px}
+#state{min-height:1.4em;color:var(--mute);font-size:.95rem;text-align:center}
+.log{background:var(--card);border:1px solid var(--line);border-radius:18px;padding:16px;min-height:96px}
+.you{color:var(--mute);margin:0 0 8px;font-size:.95rem}
+.bot{margin:0;font-size:1.25rem;font-weight:600;line-height:1.3}
+form{display:flex;gap:8px;margin-top:14px}
+input[type=text]{flex:1;min-width:0;padding:12px 14px;border-radius:14px;border:1px solid var(--line);background:var(--card);color:var(--ink);font:inherit}
+.btn{padding:12px 16px;border-radius:14px;border:1px solid var(--line);background:var(--card);color:var(--ink);font:inherit;font-weight:600;cursor:pointer}
+details{margin-top:22px;color:var(--mute)}
+summary{cursor:pointer;font-weight:600;color:var(--ink)}
+.opts{display:grid;gap:12px;margin-top:12px}
+label{display:grid;gap:4px;font-size:.92rem}
+select{padding:11px;border-radius:12px;border:1px solid var(--line);background:var(--card);color:var(--ink);font:inherit}
+.reset{color:var(--coral);border-color:var(--coral)}
+@media (prefers-reduced-motion:reduce){*{transition:none!important}}
+</style>
+</head>
+<body>
+<main>
+  <h1>Pillechat</h1>
+  <p class="sub">Tryk på knappen og sig fx: “Har jeg taget mine piller i dag?”</p>
+
+  <section class="status" aria-label="Status i dag">
+    <div class="row" id="row-piller"><div class="cap"></div><div><b>Piller</b><span id="t-piller">Ikke registreret i dag</span></div></div>
+    <div class="row" id="row-vand"><div class="cap"></div><div><b>Vand</b><span id="t-vand">0 glas i dag</span></div></div>
+    <div class="row" id="row-motion"><div class="cap"></div><div><b>Motion</b><span id="t-motion">Ikke registreret i dag</span></div></div>
+  </section>
+
+  <div class="mic-wrap">
+    <button id="mic" type="button" aria-pressed="false">Tal</button>
+    <div id="state" role="status" aria-live="polite"></div>
+  </div>
+
+  <section class="log" aria-live="polite">
+    <p class="you" id="you">Du har ikke sagt noget endnu.</p>
+    <p class="bot" id="bot">Jeg lytter, når du trykker.</p>
+  </section>
+
+  <form id="tf" autocomplete="off">
+    <input type="text" id="ti" placeholder="Eller skriv her" aria-label="Skriv et spørgsmål">
+    <button class="btn" type="submit">Send</button>
+  </form>
+
+  <details>
+    <summary>Indstillinger</summary>
+    <div class="opts">
+      <label>Talegenkendelse
+        <select id="engine">
+          <option value="browser">Browserens egen (hurtig, sender lyd til Google)</option>
+          <option value="whisper">Whisper (open source, kører på telefonen)</option>
+        </select>
+      </label>
+      <label>Oplæsning af svar
+        <select id="tts"><option value="on">Til</option><option value="off">Fra</option></select>
+      </label>
+      <button class="btn reset" id="reset" type="button">Nulstil dagens data</button>
+      <span>Whisper henter en model på ca. 80 MB første gang og gemmer den i browseren. Data gemmes kun på din telefon.</span>
+    </div>
+  </details>
+</main>
+
+<script type="module">
+const $ = id => document.getElementById(id);
+const KEY = "pillechat-v1";
+const today = () => new Date().toLocaleDateString("sv-SE"); // YYYY-MM-DD
+const nowTime = () => new Date().toLocaleTimeString("da-DK",{hour:"2-digit",minute:"2-digit"});
+
+/* ---------- Data (kun på telefonen) ---------- */
+function load(){
+  try{
+    const d = JSON.parse(localStorage.getItem(KEY) || "{}");
+    if(d.dato !== today()) return {dato:today(), piller:null, vand:0, motion:null, prefs:d.prefs||{}};
+    return d;
+  }catch(e){ return {dato:today(), piller:null, vand:0, motion:null, prefs:{}}; }
+}
+function save(){ try{ localStorage.setItem(KEY, JSON.stringify(data)); }catch(e){} }
+let data = load();
+
+function render(){
+  $("row-piller").classList.toggle("done", !!data.piller);
+  $("t-piller").textContent = data.piller ? "Taget kl. " + data.piller : "Ikke registreret i dag";
+  $("row-vand").classList.toggle("done", data.vand > 0);
+  $("t-vand").textContent = data.vand + (data.vand === 1 ? " glas i dag" : " glas i dag");
+  $("row-motion").classList.toggle("done", !!data.motion);
+  $("t-motion").textContent = data.motion ? "Registreret kl. " + data.motion : "Ikke registreret i dag";
+}
+
+/* ---------- Forståelse af sætninger ---------- */
+const tal = {en:1,et:1,to:2,tre:3,fire:4,fem:5,seks:6,syv:7,otte:8,ni:9,ti:10};
+function findTal(t){
+  const m = t.match(/\d+/); if(m) return parseInt(m[0],10);
+  for(const w of t.split(/\s+/)) if(tal[w]) return tal[w];
+  return null;
+}
+function erSpoergsmaal(t){
+  return /\?|^(har|tog|er|hvor mange|hvornår|husker|nåede)\b|\b(har jeg|tog jeg|har jeg ikke|hvor mange)\b/.test(t);
+}
+function svar(raw){
+  const t = raw.toLowerCase().replace(/[.,!]/g," ").replace(/\s+/g," ").trim();
+  if(!t) return "Jeg hørte ikke noget. Prøv igen.";
+  data = load(); const q = erSpoergsmaal(t);
+
+  if(/pille|medicin|tablet/.test(t)){
+    if(q){
+      return data.piller ? "Ja, du tog dine piller i dag kl. " + data.piller + "." : "Nej, du har ikke registreret dine piller i dag.";
+    }
+    if(/taget|tog|spist|slugt/.test(t)){ data.piller = nowTime(); save(); render(); return "Noteret. Du tog dine piller kl. " + data.piller + "."; }
+  }
+  if(/vand|glas/.test(t)){
+    if(q) return data.vand ? "Du har drukket " + data.vand + (data.vand===1?" glas":" glas") + " vand i dag." : "Du har ikke registreret nogen glas vand i dag.";
+    if(/drukket|drak|fået/.test(t)){ const n = findTal(t) || 1; data.vand += n; save(); render(); return "Noteret. I alt " + data.vand + " glas vand i dag."; }
+  }
+  if(/motion|trænet|træning|løbet|gået en tur|cyklet/.test(t)){
+    if(q) return data.motion ? "Ja, du har motioneret i dag. Du noterede det kl. " + data.motion + "." : "Nej, du har ikke registreret motion i dag.";
+    data.motion = nowTime(); save(); render(); return "Noteret. Motion registreret kl. " + data.motion + ".";
+  }
+  return "Det forstod jeg ikke. Prøv fx: “Har jeg taget mine piller i dag?”";
+}
+
+/* ---------- Visning og oplæsning ---------- */
+function vis(du, bot){
+  $("you").textContent = "Du: " + du;
+  $("bot").textContent = bot;
+  if($("tts").value === "on" && "speechSynthesis" in window){
+    speechSynthesis.cancel();
+    const u = new SpeechSynthesisUtterance(bot); u.lang = "da-DK";
+    const v = speechSynthesis.getVoices().find(v => v.lang && v.lang.startsWith("da"));
+    if(v) u.voice = v;
+    speechSynthesis.speak(u);
+  }
+}
+const haandter = t => vis(t || "(intet hørt)", svar(t));
+const setState = s => $("state").textContent = s;
+
+/* ---------- Motor 1: browserens talegenkendelse ---------- */
+const SR = window.SpeechRecognition || window.webkitSpeechRecognition;
+function lyt_browser(){
+  if(!SR){ setState("Din browser har ikke indbygget talegenkendelse. Vælg Whisper i indstillinger."); return; }
+  const r = new SR(); r.lang = "da-DK"; r.interimResults = false; r.maxAlternatives = 1;
+  let fik = false;
+  r.onstart = () => { $("mic").classList.add("live"); $("mic").textContent = "Lytter"; setState(""); };
+  r.onresult = e => { fik = true; haandter(e.results[0][0].transcript); };
+  r.onerror = e => setState(e.error === "not-allowed" ? "Giv browseren adgang til mikrofonen." : "Fejl: " + e.error);
+  r.onend = () => { $("mic").classList.remove("live"); $("mic").textContent = "Tal"; if(!fik && !$("state").textContent) setState("Jeg hørte ikke noget."); };
+  r.start();
+}
+
+/* ---------- Motor 2: Whisper i browseren (transformers.js) ---------- */
+let asr = null;
+async function hentWhisper(){
+  if(asr) return asr;
+  setState("Henter Whisper-model (kun første gang)…");
+  const { pipeline } = await import("https://cdn.jsdelivr.net/npm/@huggingface/transformers@3.7.5/+esm");
+  asr = await pipeline("automatic-speech-recognition", "onnx-community/whisper-base", {
+    dtype: { encoder_model: "fp32", decoder_model_merged: "q8" },
+    progress_callback: p => { if(p.status === "progress") setState("Henter model… " + Math.round(p.progress) + " %"); }
+  });
+  return asr;
+}
+let rec = null, chunks = [], stream = null;
+async function lyt_whisper(){
+  if(rec && rec.state === "recording"){ rec.stop(); return; }
+  try{
+    stream = await navigator.mediaDevices.getUserMedia({audio:true});
+  }catch(e){ setState("Giv browseren adgang til mikrofonen."); return; }
+  chunks = []; rec = new MediaRecorder(stream);
+  rec.ondataavailable = e => chunks.push(e.data);
+  rec.onstop = async () => {
+    stream.getTracks().forEach(t => t.stop());
+    $("mic").classList.remove("live"); $("mic").textContent = "Tal";
+    try{
+      const model = await hentWhisper();
+      setState("Omsætter tale til tekst…");
+      const buf = await new Blob(chunks).arrayBuffer();
+      const ctx = new AudioContext({sampleRate:16000});
+      const audio = (await ctx.decodeAudioData(buf)).getChannelData(0);
+      const out = await model(audio, {language:"danish", task:"transcribe"});
+      setState(""); haandter(out.text.trim());
+    }catch(e){ setState("Fejl: " + (e.message || e)); }
+  };
+  rec.start(); $("mic").classList.add("live"); $("mic").textContent = "Stop";
+  setState("Tryk igen, når du er færdig.");
+}
+
+/* ---------- Knapper ---------- */
+$("mic").addEventListener("click", () => $("engine").value === "whisper" ? lyt_whisper() : lyt_browser());
+$("tf").addEventListener("submit", e => { e.preventDefault(); const v = $("ti").value.trim(); if(v){ haandter(v); $("ti").value = ""; } });
+$("reset").addEventListener("click", () => { data = {dato:today(), piller:null, vand:0, motion:null, prefs:{}}; save(); render(); vis("(nulstil)", "Dagens data er nulstillet."); });
+$("engine").addEventListener("change", () => { try{ localStorage.setItem(KEY+"-engine", $("engine").value); }catch(e){} });
+try{ const e = localStorage.getItem(KEY+"-engine"); if(e) $("engine").value = e; }catch(e){}
+if(!SR) $("engine").value = "whisper";
+if("speechSynthesis" in window) speechSynthesis.getVoices();
+render();
+</script>
+</body>
+</html>
