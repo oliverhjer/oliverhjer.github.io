@@ -1,0 +1,349 @@
+<!DOCTYPE html>
+<html lang="da">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-title" content="Pillechat">
+<title>Pillechat</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:wght@400;600;800&display=swap" rel="stylesheet">
+<style>
+:root{
+  --bg:#eef3f1; --card:#ffffff; --ink:#14272b; --mute:#5d7074;
+  --teal:#0f6b6b; --coral:#e2574c; --line:#d3dfdc; --ok:#1f8a5b;
+  box-sizing:border-box;
+  padding-top:env(safe-area-inset-top,0px); padding-bottom:env(safe-area-inset-bottom,0px);
+  color-scheme:light;
+}
+@media (prefers-color-scheme:dark){
+  :root:not([data-theme="light"]){
+    --bg:#0e1a1c; --card:#172629; --ink:#e7f0ee; --mute:#8fa5a8; --line:#27393c;
+    --teal:#3fb5ac; --coral:#ff7b6f; --ok:#4cc58d; color-scheme:dark;
+  }
+}
+*{box-sizing:border-box}
+html,body{margin:0;min-height:100%}
+html{-webkit-text-size-adjust:100%;text-size-adjust:100%}
+body{background:var(--bg);color:var(--ink);font-family:"Bricolage Grotesque",system-ui,-apple-system,"Segoe UI",sans-serif;line-height:1.45}
+main{max-width:480px;margin:0 auto;padding:20px 18px 40px}
+h1{font-size:1.9rem;font-weight:800;letter-spacing:-.02em;margin:6px 0 2px}
+.sub{color:var(--mute);margin:0 0 22px}
+.status{display:grid;gap:10px;margin-bottom:18px}
+.row{display:flex;align-items:center;gap:14px;background:var(--card);border:1px solid var(--line);border-radius:18px;padding:14px 16px}
+.row[hidden]{display:none}
+.cap{width:46px;height:20px;border-radius:20px;flex:none;border:2px solid var(--line);background:var(--line);transition:background .3s,border-color .3s}
+.row.done .cap{border-color:var(--ok);background:linear-gradient(90deg,var(--teal) 50%,var(--coral) 50%)}
+.row b{display:block;font-weight:600}
+.row span{color:var(--mute);font-size:.92rem}
+.mic-wrap{display:flex;flex-direction:column;align-items:center;gap:14px;margin:14px 0 24px}
+#mic{width:190px;height:190px;border-radius:95px;border:0;background:var(--teal);color:#fff;font:inherit;font-weight:800;font-size:1.6rem;cursor:pointer;box-shadow:0 0 0 12px color-mix(in srgb,var(--teal) 18%,transparent);transition:transform .15s,background .2s,box-shadow .2s;-webkit-tap-highlight-color:transparent}
+#mic:active{transform:scale(.96)}
+#mic.live{background:var(--coral);box-shadow:0 0 0 20px color-mix(in srgb,var(--coral) 22%,transparent)}
+#mic:focus-visible,button:focus-visible,select:focus-visible,input:focus-visible{outline:3px solid var(--coral);outline-offset:3px}
+#state{min-height:1.4em;color:var(--mute);font-size:.95rem;text-align:center}
+.log{background:var(--card);border:1px solid var(--line);border-radius:18px;padding:16px;min-height:96px}
+.you{color:var(--mute);margin:0 0 8px;font-size:.95rem}
+.bot{margin:0;font-size:1.25rem;font-weight:600;line-height:1.3}
+form{display:flex;gap:8px;margin-top:14px}
+input[type=text],input[type=number]{flex:1;min-width:0;padding:12px 14px;border-radius:14px;border:1px solid var(--line);background:var(--card);color:var(--ink);font:inherit}
+.btn{padding:12px 16px;border-radius:14px;border:1px solid var(--line);background:var(--card);color:var(--ink);font:inherit;font-weight:600;cursor:pointer}
+details{margin-top:14px;color:var(--mute)}
+summary{cursor:pointer;font-weight:600;color:var(--ink)}
+.opts{display:grid;gap:12px;margin-top:12px}
+label{display:grid;gap:4px;font-size:.92rem}
+.two{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+select{padding:11px;border-radius:12px;border:1px solid var(--line);background:var(--card);color:var(--ink);font:inherit}
+.reset{color:var(--coral);border-color:var(--coral)}
+.sm{padding:7px 12px;font-size:.9rem;margin-top:10px}
+
+/* Liggende visning (iPhone 13: 844 x 390) */
+@media (orientation:landscape) and (max-height:520px){
+  main{max-width:none;height:calc(100dvh - env(safe-area-inset-top,0px) - env(safe-area-inset-bottom,0px));overflow-y:auto;
+    display:grid;grid-template-columns:1fr 1.15fr;gap:0 22px;align-content:start;
+    padding:10px max(20px,env(safe-area-inset-right,0px)) 10px max(20px,env(safe-area-inset-left,0px))}
+  h1{font-size:1.5rem;margin:0 0 8px}
+  .sub{display:none}
+  .status{gap:7px;margin-bottom:8px}
+  .row{padding:9px 14px;border-radius:14px;gap:12px}
+  .row span{font-size:.85rem}
+  .mic-wrap{flex-direction:row;justify-content:flex-start;align-items:center;gap:16px;margin:0 0 10px}
+  #mic{width:128px;height:128px;border-radius:64px;font-size:1.35rem;flex:none;box-shadow:0 0 0 8px color-mix(in srgb,var(--teal) 18%,transparent)}
+  #mic.live{box-shadow:0 0 0 12px color-mix(in srgb,var(--coral) 22%,transparent)}
+  #state{text-align:left;flex:1}
+  .log{min-height:0;padding:12px 14px;border-radius:14px}
+  .bot{font-size:1.1rem}
+  form{margin-top:10px}
+  details{margin-top:4px}
+}
+@media (prefers-reduced-motion:reduce){*{transition:none!important}}
+</style>
+</head>
+<body>
+<main>
+<div class="col-a">
+  <h1>Pillechat</h1>
+  <p class="sub">Tryk på knappen og sig fx: “Har jeg taget mine piller i dag?”</p>
+
+  <section class="status" aria-label="Status">
+    <div class="row" id="row-piller"><div class="cap"></div><div><b>Piller</b><span id="t-piller">Ikke registreret i dag</span></div></div>
+    <div class="row" id="row-ferie" hidden><div class="cap"></div><div><b>Ferie</b><span id="t-ferie"></span></div></div>
+  </section>
+
+  <details>
+    <summary>Indstillinger</summary>
+    <div class="opts">
+      <div class="two">
+        <label>Piller om dagen<input type="number" id="perdag" min="1" max="20" inputmode="numeric"></label>
+        <label>Ekstra dage med<input type="number" id="buffer" min="0" max="30" inputmode="numeric"></label>
+      </div>
+      <label>Talegenkendelse
+        <select id="engine">
+          <option value="browser">Browserens egen (hurtig, sender lyd til Google)</option>
+          <option value="whisper">Whisper (open source, kører på telefonen)</option>
+        </select>
+      </label>
+      <label>Oplæsning af svar
+        <select id="tts"><option value="on">Til</option><option value="off">Fra</option></select>
+      </label>
+      <button class="btn reset" id="reset" type="button">Nulstil dagens piller</button>
+      <button class="btn reset" id="clearferie" type="button">Slet ferieplan</button>
+      <span>Ekstra dage er en reserve, hvis hjemrejsen bliver forsinket. Whisper henter en model på ca. 80 MB første gang. Data gemmes kun på din telefon.</span>
+    </div>
+  </details>
+</div>
+
+<div class="col-b">
+  <div class="mic-wrap">
+    <button id="mic" type="button" aria-pressed="false">Tal</button>
+    <div id="state" role="status" aria-live="polite"></div>
+  </div>
+
+  <section class="log" aria-live="polite">
+    <p class="you" id="you">Du har ikke sagt noget endnu.</p>
+    <p class="bot" id="bot">Jeg lytter, når du trykker.</p>
+    <button class="btn sm" id="replay" type="button">Læs svar op</button>
+  </section>
+
+  <form id="tf" autocomplete="off">
+    <input type="text" id="ti" placeholder="Eller skriv her" aria-label="Skriv et spørgsmål">
+    <button class="btn" type="submit">Send</button>
+  </form>
+</div>
+</main>
+
+<script type="module">
+const $ = id => document.getElementById(id);
+const KEY = "pillechat-v2";
+const today = () => new Date().toLocaleDateString("sv-SE");
+const nowTime = () => new Date().toLocaleTimeString("da-DK",{hour:"2-digit",minute:"2-digit"});
+const DEF = {perDag:1, buffer:2};
+
+/* ---------- Data (kun på telefonen) ---------- */
+function load(){
+  let d = {};
+  try{ d = JSON.parse(localStorage.getItem(KEY) || "{}"); }catch(e){}
+  const out = {dato:today(), piller:null, ferie:d.ferie||null, prefs:Object.assign({}, DEF, d.prefs||{})};
+  if(d.dato === today()) out.piller = d.piller || null;
+  return out;
+}
+function save(){ try{ localStorage.setItem(KEY, JSON.stringify(data)); }catch(e){} }
+let data = load();
+const pl = n => n + (n === 1 ? " pille" : " piller");
+
+function render(){
+  $("row-piller").classList.toggle("done", !!data.piller);
+  $("t-piller").textContent = data.piller ? "Taget kl. " + data.piller : "Ikke registreret i dag";
+  const f = data.ferie;
+  $("row-ferie").hidden = !f;
+  if(f){
+    $("row-ferie").classList.toggle("done", !!f.pakket);
+    $("t-ferie").textContent = (f.pakket ? "Pakket: " : "Pak ") + pl(f.total) + " til " + f.dage + " dage";
+  }
+  $("perdag").value = data.prefs.perDag; $("buffer").value = data.prefs.buffer;
+}
+
+/* ---------- Forståelse af sætninger ---------- */
+const ORD = {en:1,et:1,to:2,tre:3,fire:4,fem:5,seks:6,syv:7,otte:8,ni:9,ti:10,elleve:11,tolv:12,tretten:13,fjorten:14,femten:15,seksten:16,sytten:17,atten:18,nitten:19,tyve:20,enogtyve:21,toogtyve:22,treogtyve:23,fireogtyve:24,femogtyve:25,otteogtyve:28,tredive:30};
+const ORDRE = Object.keys(ORD).sort((a,b)=>b.length-a.length).join("|");
+const TAL = "(\\d+|" + ORDRE + ")";
+const tilTal = s => /^\d+$/.test(s) ? parseInt(s,10) : ORD[s];
+
+function findDage(t, kunTal){
+  let m;
+  if((m = t.match(new RegExp("\\b" + TAL + "\\s*(uge|uger)\\b")))) return tilTal(m[1]) * 7;
+  if((m = t.match(new RegExp("\\b" + TAL + "\\s*(dag|dage|døgn|nat|nætter)\\b")))) return tilTal(m[1]);
+  if((m = t.match(new RegExp("\\b" + TAL + "\\s*(måned|måneder)\\b")))) return tilTal(m[1]) * 30;
+  if(/\bhalvanden uge\b/.test(t)) return 10;
+  if(/\bet par (dage|døgn)\b/.test(t)) return 3;
+  if(/\b(en|et) uge\b|\bugen\b/.test(t)) return 7;
+  if(/\bweekend/.test(t)) return 3;
+  if(/\b(en|1) måned\b/.test(t)) return 30;
+  if(kunTal && (m = t.match(new RegExp("\\b" + TAL + "\\b")))) return tilTal(m[1]);
+  return null;
+}
+
+const PILLE = /[pb]ill|medicin|tablet/;
+const FERIE = /ferie|rejse|rejser|bortrejst|skal væk|skal af sted|udlandet|weekendtur/;
+const SPG   = /\bhar jeg\b|\btog jeg\b|\bhusket\b|\bglemt\b|\bmon jeg\b|\btaget\b/;
+let pending = null;
+const pick = a => a[Math.floor(Math.random() * a.length)];
+// Variation gælder KUN formuleringen. Ja/nej kommer altid fra de gemte data.
+function status(){
+  return data.piller
+    ? pick(["Ja, du tog dine piller i dag kl. " + data.piller + ".", "Det har du. Du tog dem kl. " + data.piller + ".", "Ja, de er taget. Klokken var " + data.piller + "."])
+    : pick(["Nej, du har ikke registreret dine piller i dag.", "Ikke endnu. Jeg har ingen registrering af dine piller i dag.", "Nej, det ser ikke ud til, at du har taget dem. Husk dine piller."]);
+}
+function altid(){
+  data = load();
+  return pick(["Det fangede jeg ikke helt, men her er status. ", "Jeg var ikke helt med, men det vigtigste først. ", "Undskyld, det forstod jeg ikke. "]) + status();
+}
+
+function planFerie(dage){
+  if(dage > 365) return "Det er mere end et år. Sig det igen med færre dage.";
+  const {perDag, buffer} = data.prefs;
+  const total = (dage + buffer) * perDag;
+  data.ferie = {dage, perDag, buffer, total, pakket:false};
+  save(); render();
+  return "Du skal af sted i " + dage + " dage. Med " + pl(perDag) + " om dagen og " + buffer + " ekstra dage skal du pakke " + pl(total) + ".";
+}
+
+function svar(raw){
+  const t = raw.toLowerCase().replace(/[.,!?;:]/g," ").replace(/\s+/g," ").trim();
+  data = load();
+  if(!t) return "Jeg hørte ikke noget. " + status();
+
+  // Opfølgning: jeg spurgte, hvor længe du er væk
+  if(pending === "dage"){
+    pending = null;
+    const d = findDage(t, true);
+    if(d) return planFerie(d);
+  }
+
+  // Ferie
+  if(FERIE.test(t)){
+    const d = findDage(t);
+    if(d) return planFerie(d);
+    pending = "dage"; return "Hvor mange dage skal du af sted?";
+  }
+  if(/\bpakket\b|\bhar pakket\b/.test(t) && data.ferie){
+    data.ferie.pakket = true; save(); render();
+    return "Fint, jeg har noteret, at ferie-pillerne er pakket.";
+  }
+  if(/ferieplan|hvor mange piller (skal|må) jeg/.test(t) && data.ferie){
+    return "Du skal pakke " + pl(data.ferie.total) + " til " + data.ferie.dage + " dage.";
+  }
+
+  // Piller: bred genkendelse, så "har jeg" + "piller" er nok
+  if(PILLE.test(t) || SPG.test(t) || /\bjeg (har |lige |ikke )*(taget|tog)\b/.test(t)){
+    const udsagn = /\bjeg (har |lige |ikke )*(taget|tog|spist|slugt)\b/.test(t) && !/\bhar jeg\b|\btog jeg\b/.test(t);
+    const nej = /\bikke\b|\baldrig\b/.test(t);
+    if(udsagn && !nej){
+      data.piller = nowTime(); save(); render();
+      return pick(["Noteret. Du tog dine piller kl. " + data.piller + ".", "Godt. Jeg har skrevet, at du tog dem kl. " + data.piller + ".", "Fint, det er registreret kl. " + data.piller + "."]);
+    }
+    if(udsagn && nej) return "Okay, jeg har ikke noteret noget. Husk at tage dem.";
+    return status();
+  }
+  return altid();
+}
+
+/* ---------- Visning og oplæsning ---------- */
+let sidste = "";
+function tale(tekst){
+  if(!("speechSynthesis" in window) || !tekst) return;
+  speechSynthesis.cancel();
+  const u = new SpeechSynthesisUtterance(tekst); u.lang = "da-DK"; u.rate = 0.95;
+  const v = speechSynthesis.getVoices().find(v => v.lang && v.lang.replace("_","-").startsWith("da"));
+  if(v) u.voice = v;
+  speechSynthesis.speak(u);
+}
+// iOS tillader kun tale, hvis den er "låst op" af et tryk. Det gør vi på mikrofonknappen.
+function laasOp(){
+  if(!("speechSynthesis" in window)) return;
+  const u = new SpeechSynthesisUtterance(" "); u.volume = 0; speechSynthesis.speak(u);
+}
+function vis(du, bot){
+  $("you").textContent = "Du: " + du;
+  $("bot").textContent = bot; sidste = bot;
+  if($("tts").value === "on") tale(bot);
+}
+const haandter = t => vis(t || "(intet hørt)", svar(t));
+const setState = s => $("state").textContent = s;
+
+/* ---------- Motor 1: browserens talegenkendelse ---------- */
+const SR = window.SpeechRecognition || window.webkitSpeechRecognition;
+function lyt_browser(){
+  if(!SR){ vis("(intet hørt)", "Din browser kan ikke høre tale her. Vælg Whisper i indstillinger, eller skriv i feltet."); return; }
+  const r = new SR(); r.lang = "da-DK"; r.interimResults = false; r.maxAlternatives = 1;
+  let fik = false, faerdig = false;
+  const fejl = m => { if(faerdig) return; faerdig = true; vis("(intet hørt)", m); setState(m); };
+  r.onstart = () => { $("mic").classList.add("live"); $("mic").textContent = "Lytter"; setState(""); };
+  r.onresult = e => { fik = true; faerdig = true; haandter(e.results[0][0].transcript); };
+  r.onerror = e => fejl(e.error === "service-not-allowed" ? "Slå Diktering til: Indstillinger, Generelt, Tastatur, Aktivér diktering. Eller vælg Whisper i indstillinger." : e.error === "not-allowed" ? "Jeg har ikke adgang til mikrofonen. Giv browseren lov, eller skriv i feltet." : "Jeg kunne ikke høre dig. Tryk på knappen og prøv igen.");
+  r.onend = () => { $("mic").classList.remove("live"); $("mic").textContent = "Tal"; if(!fik) fejl("Jeg hørte ikke noget. Tryk på knappen og prøv igen."); };
+  r.start();
+}
+
+/* ---------- Motor 2: Whisper i browseren (transformers.js) ---------- */
+let asr = null;
+async function hentWhisper(){
+  if(asr) return asr;
+  setState("Henter Whisper-model (kun første gang)…");
+  const { pipeline } = await import("https://cdn.jsdelivr.net/npm/@huggingface/transformers@3.7.5/+esm");
+  asr = await pipeline("automatic-speech-recognition", "onnx-community/whisper-base", {
+    dtype: { encoder_model: "fp32", decoder_model_merged: "q8" },
+    progress_callback: p => { if(p.status === "progress") setState("Henter model… " + Math.round(p.progress) + " %"); }
+  });
+  return asr;
+}
+let rec = null, chunks = [], stream = null;
+async function lyt_whisper(){
+  if(rec && rec.state === "recording"){ rec.stop(); return; }
+  try{ stream = await navigator.mediaDevices.getUserMedia({audio:true}); }
+  catch(e){ vis("(intet hørt)", "Jeg har ikke adgang til mikrofonen. Giv browseren lov, eller skriv i feltet."); return; }
+  chunks = []; rec = new MediaRecorder(stream);
+  rec.ondataavailable = e => chunks.push(e.data);
+  rec.onstop = async () => {
+    stream.getTracks().forEach(t => t.stop());
+    $("mic").classList.remove("live"); $("mic").textContent = "Tal";
+    try{
+      const model = await hentWhisper();
+      setState("Omsætter tale til tekst…");
+      const buf = await new Blob(chunks).arrayBuffer();
+      const AC = window.AudioContext || window.webkitAudioContext;
+      const dec = await new Promise((ok, no) => new AC().decodeAudioData(buf, ok, no));
+      const off = new OfflineAudioContext(1, Math.max(1, Math.ceil(dec.duration * 16000)), 16000);
+      const src = off.createBufferSource(); src.buffer = dec; src.connect(off.destination); src.start();
+      const audio = (await off.startRendering()).getChannelData(0);
+      const out = await model(audio, {language:"danish", task:"transcribe"});
+      setState(""); haandter(out.text.trim());
+    }catch(e){ setState(""); vis("(fejl)", altid()); }
+  };
+  rec.start(); $("mic").classList.add("live"); $("mic").textContent = "Stop";
+  setState("Tryk igen, når du er færdig.");
+}
+
+/* ---------- Knapper ---------- */
+$("replay").addEventListener("click", () => tale(sidste));
+$("mic").addEventListener("click", () => { laasOp(); $("engine").value === "whisper" ? lyt_whisper() : lyt_browser(); });
+$("tf").addEventListener("submit", e => { e.preventDefault(); const v = $("ti").value.trim(); if(v){ haandter(v); $("ti").value = ""; } });
+$("reset").addEventListener("click", () => { data.piller = null; save(); render(); vis("(nulstil)", "Dagens piller er nulstillet."); });
+$("clearferie").addEventListener("click", () => { data.ferie = null; save(); render(); vis("(slet ferieplan)", "Ferieplanen er slettet."); });
+function gemPrefs(){
+  const p = parseInt($("perdag").value,10), b = parseInt($("buffer").value,10);
+  if(p >= 1) data.prefs.perDag = p;
+  if(b >= 0) data.prefs.buffer = b;
+  save();
+}
+$("perdag").addEventListener("change", gemPrefs);
+$("buffer").addEventListener("change", gemPrefs);
+$("engine").addEventListener("change", () => { try{ localStorage.setItem(KEY+"-engine", $("engine").value); }catch(e){} });
+try{ const e = localStorage.getItem(KEY+"-engine"); if(e) $("engine").value = e; }catch(e){}
+if(!SR) $("engine").value = "whisper";
+if("speechSynthesis" in window) speechSynthesis.getVoices();
+render();
+</script>
+</body>
+</html>
